@@ -1,4 +1,4 @@
-This is XeTeX, Version 3.141592653-2.6-0.999996 (TeX Live 2024) (preloaded format=xelatex 2024.4.27)  13 NOV 2024 22:12
+This is XeTeX, Version 3.141592653-2.6-0.999996 (TeX Live 2024) (preloaded format=xelatex 2024.4.27)  14 NOV 2024 12:48
 entering extended mode
  restricted \write18 enabled.
  file:line:error style messages enabled.
@@ -953,21 +953,28 @@ Underfull \hbox (badness 10000) in paragraph at lines 83--84
 
 [17]
 Missing character: There is no 、 (U+3001) in font [lmroman12-regular]:mapping=tex-text;!
-) (./section/241112.tex [18] [19] [20]) [21] (./zyp.aux)
+) (./section/241112.tex [18] [19] [20] [21]
+File: image/minimumSnap1.jpg Graphic file (type bmp)
+<image/minimumSnap1.jpg>
+File: image/minimumSnap2.jpg Graphic file (type bmp)
+<image/minimumSnap2.jpg>
+File: image/minimumSnap3.jpg Graphic file (type bmp)
+<image/minimumSnap3.jpg>
+ [22]) [23] (./zyp.aux)
  ***********
 LaTeX2e <2023-11-01> patch level 1
 L3 programming layer <2022/08/05>
  ***********
 Package rerunfilecheck Info: File `zyp.out' has not changed.
-(rerunfilecheck)             Checksum: D4B2727F24A64452639996772C25309A;4806.
+(rerunfilecheck)             Checksum: A991F96AE3A5270930BE71C658D8B16A;5022.
  ) 
 Here is how much of TeX's memory you used:
- 29266 strings out of 474759
- 632371 string characters out of 5761036
+ 29303 strings out of 474759
+ 633273 string characters out of 5761036
  1956148 words of memory out of 5000000
- 50916 multiletter control sequences out of 15000+600000
- 571349 words of font info for 118 fonts, out of 8000000 for 9000
+ 50946 multiletter control sequences out of 15000+600000
+ 571365 words of font info for 120 fonts, out of 8000000 for 9000
  1348 hyphenation exceptions out of 8191
  93i,18n,97p,595b,1781s stack positions out of 10000i,1000n,20000p,200000b,200000s
 
-Output written on zyp.pdf (21 pages).
+Output written on zyp.pdf (23 pages).

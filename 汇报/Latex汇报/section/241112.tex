@@ -10,8 +10,9 @@
 \end{tcolorbox}
 \subsection{Minimum Snap Trajectory Generation and Control for Quadrotors(ICRA2011)}
 \subsubsection{论文所解决的问题}
-论文提出了四旋翼无人机在严格约束的三维空间中的控制器设计和轨迹生成方法。
-另外，论文对无人机的微分平坦特性进行了详细推导，并提出飞行走廊约束方法。
+论文提出了四旋翼无人机在严格约束（轨迹总时间以及航点约束）的三维空间中的控制器设计和轨迹生成方法。
+论文对无人机的微分平坦特性进行了详细推导；构建minimum snap优化问题，将优化变量的解耦关系，将问题分解成四个优化问题，并转换成无量纲优化问题。
+并提出飞行走廊约束方法，本文中用于无人机钻环。
 \subsubsection{论文算法}
 （1）\textbf{无人机微分平坦特性}
 
@@ -81,7 +82,7 @@
 其中，$\mu_r$、$\mu_\psi$的作用是使积分量无量纲。由于$u_2,u_3$由位置的四阶导表示，并且$u_4$由偏航角的二阶导表示，因此取$k_r=4,k_\psi=2$
 将优化变量$\sigma_{Tij}=[x_{Tij},y_{Tij},z_{T\boldsymbol{i}j},\psi_{Tij}]^T$
 写成$4mn\times 1$的向量$\mathbf{c}$，则问题转换为一个QP问题，如下
-\begin{equation}
+\begin{equation}\label{qp}
     \begin{array}{cc}\min&c^THc+f^Tc\\\mathrm{s.t.}&Ac\leq b\end{array}
 \end{equation}
 （3）\textbf{无量纲优化}
@@ -124,4 +125,69 @@
 \begin{equation}
     x_T^*(t)=x_0+(x_1-x_0)\tilde{x}_T^*(t/t_1),
 \end{equation}
-其中，$\tilde{x}_T^*(0)=0,\tilde{x}_T^*(1)=1$，且$\tilde{y}_T,\tilde{z}_T$也满足同样的关系。
+其中，$\tilde{x}_T^*(0)=0,\tilde{x}_T^*(1)=1$，且$\tilde{y}_T,\tilde{z}_T$也满足同样的关系。\\
+（4）\textbf{飞行走廊}
+
+
+定义$\mathbf{t}_i$为$\mathbf{r}_i$到$\mathbf{t}_{i+1}$的单位向量，则垂直距离向量定义为
+\begin{equation}
+    \mathbf{d}_i(t)=(\mathbf{r}_T(t)-\mathbf{r}_i)-((\mathbf{r}_T(t)-\mathbf{r}_i)\cdot\mathbf{t}_i)\mathbf{t}_i.
+\end{equation}
+并定义约束
+\begin{equation}\|\mathbf{d}_i(t)\|_\infty\leq\delta_i\text{ while }t_i\leq t\leq t_{i+1}.\end{equation}
+其中，$\left\lVert \right\rVert _\infty  $表示无穷范数。对于$n$维向量$\mathbf{x}=(x_{1},x_{2},\ldots,x_{n})$，无穷范数定义为$\|\mathbf{x}\|_\infty=\max_{1\leq i\leq n}|x_i|$。
+上述约束可以通过引入$n_c$个中间点从而合并至QP问题\ref{qp}中。
+\begin{equation}
+    \left|\mathbf{x}_W\cdot\mathbf{d}_i\left(t_i+\frac{j}{1+n_c}(t_{i+1}-t_i)\right)\right|\leq\delta_i\text{ for }j=1,...,n_c
+\end{equation}
+（5）\textbf{时间优化}
+
+
+在大多数情况下，飞至某个固定点时的时间并不重要，因此可以对这些时间进行优化，找到每段轨迹最优飞行时间。
+构建如下优化问题。
+\begin{equation}\label{optt}
+    \begin{aligned}\min&f(\mathbf{T})\\\mathrm{s.t.}&\sum T_i=t_m\\&T_i\geq0\end{aligned}
+\end{equation}
+其中$f(\mathbf{T})$是问题\ref{costfun}的解，时间向量$\textbf{T}= [T_1,T_2,...,T_m]$。可通过梯度下降法来求解问题\ref{optt}。
+$f(\mathbf{T})$对第$i$段轨迹的时间的导数如下
+\begin{equation}
+    \nabla_{g_i}f=\frac{f(\mathbf{T}+h\mathbf{g}_i)-f(\mathbf{T})}h
+\end{equation}
+其中，向量$\mathbf{g}_i$的第$i$个元素是1，其余元素都是$\frac{-1}{m-1}$。可以使得$\sum\mathbf{g}_i=0$，对轨迹飞行总时间没有影响。
+
+\subsubsection{论文实验结果}
+（1）飞行走廊、时间优化仿真实验
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=8cm, height=4cm]{image/minimumSnap1.jpg}
+    \includegraphics[width=8cm, height=4cm]{image/minimumSnap2.jpg}
+    \caption{飞行走廊实验（左）  时间优化实验（右）}\label{snap1}
+\end{figure}
+
+
+
+（2）实机钻环实验
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=8cm, height=5cm]{image/minimumSnap3.jpg}
+    \caption{实机钻环实验}\label{snap3}
+\end{figure}
+
+\subsubsection{论文启发}（1）微分平坦
+
+
+掌握无人机微分平坦特性的推导，由平坦输出获得全状态变量和全输入变量的方法。\\
+（2）优化问题各维度解耦与无量纲优化
+
+
+在该优化问题中优化变量是解耦的，因此优化问题可以被分解为若干个优化子问题。
+并且可以将子优化问题转换为无量纲优化问题，在得到无量纲优化问题的最优解后，
+通过时空放缩即可得到原问题最优解。该方法比直接求解QP问题快速，对于快速响应动态障碍物或目标非常有效\\
+（3）时间重分配
+
+
+总时间固定的重分配方法。\\
+（4）飞行走廊思想
+
+
+通过约束垂直距离向量的无穷范数，定义一个长方体形飞行走廊，并通过对轨迹采样来满足该飞行走廊约束。
