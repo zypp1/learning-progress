@@ -1,0 +1,133 @@
+\documentclass[12pt,fontset=windows]{ctexart}
+
+\usepackage{geometry} % 绘制公式
+\usepackage{graphicx}
+\usepackage{mathrsfs}%使用花体字母
+\usepackage{amsfonts}%使用双线体
+\usepackage{mathtools}%使用coloneqq符号
+\usepackage{amsmath}
+\usepackage{xcolor} % 适用颜色框
+\usepackage{tcolorbox}
+\usepackage{titling} % 用于调整标题的垂直间距
+% \usepackage{hyperref}%公式超链接
+\usepackage[colorlinks,
+linkcolor=red,
+anchorcolor=blue,
+citecolor=green
+]{hyperref}
+\usepackage{listings}
+\usepackage{array}
+\usepackage{booktabs}
+\usepackage{algorithm}  
+\usepackage{algpseudocode}  
+\usepackage{amsmath}  
+\usepackage{cases}
+
+\newcommand{\CASE}[1]{\textbf{case} #1\textbf{: } }
+\renewcommand{\algorithmicrequire}{\textbf{Input:}}  % Use Input in the format of Algorithm  
+\renewcommand{\algorithmicensure}{\textbf{Output:}} % Use Output in the format of Algorithm 
+
+
+\geometry{
+	a4paper, % 使用A4纸张
+	left=20mm, % 左侧页边距为20毫米
+	right=20mm, % 右侧页边距为20毫米
+	top=25mm, % 顶部页边距为25毫米
+	bottom=25mm % 底部页边距为25毫米
+}
+
+% 自定义环境“！”代表透明度可调节
+\tcbset{
+	blue/.style={
+		colback=blue!10!white,
+		colframe=black,
+		boxrule=1pt,
+		arc=0mm,
+		auto outer arc,
+		left=1mm,
+		right=1mm,
+		top=1mm,
+		bottom=1mm
+	}
+}
+\tcbset{
+	green/.style={
+		colback=green!10!white,
+		colframe=black,
+		boxrule=1pt,
+		arc=0mm,
+		auto outer arc,
+		left=1mm,
+		right=1mm,
+		top=1mm,
+		bottom=1mm
+	}
+}
+\tcbset{
+	red/.style={
+		colback=red!5!white,
+		colframe=black,
+		boxrule=1pt,
+		arc=0mm,
+		auto outer arc,
+		left=1mm,
+		right=1mm,
+		top=1mm,
+		bottom=1mm
+	}
+}
+\tcbset{
+	cyan/.style={
+		colback=cyan!40!white,
+		colframe=black,
+		boxrule=1pt,
+		arc=0mm,
+		auto outer arc,
+		left=1mm,
+		right=1mm,
+		top=1mm,
+		bottom=1mm
+	}
+}
+
+\lstset{
+ columns=fixed,       
+ numbers=left,                                        % 在左侧显示行号
+ numberstyle=\tiny\color{gray},                       % 设定行号格式
+ frame=none,                                          % 不显示背景边框
+ backgroundcolor=\color[RGB]{245,245,244},            % 设定背景颜色
+ keywordstyle=\color[RGB]{40,40,255},                 % 设定关键字颜色
+ numberstyle=\footnotesize\color{darkgray},           
+ commentstyle=\it\color[RGB]{0,96,96},                % 设置代码注释的格式
+ stringstyle=\rmfamily\slshape\color[RGB]{128,0,0},   % 设置字符串格式
+ showstringspaces=false,                              % 不显示字符串中的空格
+ language=c++,                                        % 设置语言
+}
+
+
+% 调整标题的垂直间距
+\setlength{\droptitle}{-60pt}
+\pretitle{\begin{center}\LARGE\bfseries\vskip -20pt}
+\posttitle{\par\vskip -10pt\rule{\textwidth}{0.4pt}\vskip -10pt\end{center}}
+\predate{\begin{center}\large\vskip -10pt}
+\postdate{\par\vskip -10pt\rule{\textwidth}{0.4pt}\vskip -20pt\end{center}}
+
+\title{MINCO轨迹类航点硬约束处理}
+
+\author{郑一品}
+\date{2024年10月9日} % 可以将日期留空，或者填写你希望显示的日期
+
+
+\begin{document}
+    
+\maketitle
+\input{section/24109.tex}
+\input{section/241021.tex}
+\input{section/241030.tex}
+\input{section/241112.tex}
+
+\end{document}
+
+
+
+

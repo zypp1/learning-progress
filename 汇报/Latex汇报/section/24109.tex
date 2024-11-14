@@ -1,0 +1,567 @@
+\section{2024年10月9日}
+\begin{tcolorbox}[cyan]
+    \begin{description}
+        \item[\large \textbf{任务}]
+        \item[1、] GCOPTER源代码
+        \item[2、] Geometrically Constrained Trajectory Optimization for Multicopters 论文研究
+        \item[3、] Polynomial-based Online Planning for Autonomous Drone Racing in Dynamic Environments对比\textbf{2}的提升
+    \end{description}
+\end{tcolorbox}
+\subsection{Geometrically Constrained Trajectory Optimization for Multicopters(T-RO2022)}
+\subsubsection{凸多面体几何约束的处理}
+对于凸多面体，其表示形式有以下两种；
+
+
+（1）\textbf{$\mathcal{V}$-多面体}: $\mathbb{R} ^d$中的有限点集$X=\{x^{1},\ldots,x^{n}\}$所构成的凸包，
+\begin{equation}
+    P^\mathcal{V}=\operatorname{conv}(X) := \{\sum_{i=1}^n\lambda_ix^i \Big| \lambda_1,\ldots,\lambda_n\geq0,
+     \sum_{i=1}^n\lambda_i=1\Big\}.
+\end{equation}
+
+
+（2）\textbf{$\mathcal{H}$-多面体}:有限线性不等式方程组的解集，
+\begin{equation}
+    P^\mathcal{H}=P(A,b) := \big\{x\in\mathbb{R}^d\mid a_i^Tx\leq b_i\text{ for }1\leq i\leq m\big\}.
+\end{equation}
+其中，$A\in\mathbb{R}^{m \times b} $是一个以$a_i^T$为行的实矩阵，$b\in\mathbb{R}^b $是一个以$b_i$为项的实向量，即
+\begin{equation}\label{polytope}
+    P^\mathcal{H}= \{x\in \mathbb{R}^n| \mathbf{A}x\preceq b\}  .
+\end{equation}
+\begin{tcolorbox}[green]
+    \textbf{欧式空间到球体的映射:}考虑m维空间里以$o$为中心、$r$为半径的低维球约束，有如下形式：
+    \begin{equation}
+        \mathcal{P}^{\mathcal{B}}=\left\{x\in\mathbb{R}^n\mid\left\|x-o\right\|_2\leq r\right\}.
+    \end{equation}
+    利用光滑的满射将$\mathbb{R}^n$映射到$\mathcal{P}^{\mathcal{B}}$，
+    便可以在$\mathbb{R}^n$的代理变量上进行优化隐式地满足$\mathcal{P}^{\mathcal{B}}$的约束。
+\end{tcolorbox}
+\begin{tcolorbox}[red]
+    \textbf{映射1: 欧氏空间$\mathbb{R}^n$ $\rightarrow $ 球体}
+    \begin{equation}\label{sqheretorn}
+        x=o+\frac{2r\xi }{\xi^\mathrm{T}\xi+1}\in\mathcal{P}^\mathcal{B}, \forall \xi\in\mathbb{R}^n.
+    \end{equation}
+    其中，引入一个代理变量$\xi$，以$\xi$指代\textbf{q}的无约束代理变量。通过计算\eqref{sqheretorn}的Jacobian即可得到梯度
+    \begin{equation}
+        \frac{\partial J}{\partial\xi_i}=\frac{2r_ig_i}{\xi_i^\mathrm{T}\xi_i+1}-\frac{4r_i(\xi_i^\mathrm{T}g_i)\xi_i}{(\xi_i^\mathrm{T}\xi_i+1)^2}.
+    \end{equation}
+    其中，$g_i\text{ 代表 }\partial J/\partial\mathbf{q}\text{ 中的第 }i\text{ 个元素 }\partial J/\partial q_i$。
+\end{tcolorbox}
+
+\begin{tcolorbox}[green]
+    \textbf{球体到凸多面体的映射:}考虑凸多面体$\mathcal{P} ^\mathcal{H}$,采用多面体的$\mathcal{V}$-表示，
+    其顶点数目为$\hat{n} +1$,分别为$(v_0,v_1,\cdots ,v_{\hat{n}})$，
+    其在重心坐标下等价于一个标准的$\hat{n}$-单纯形$\mathcal{P} ^\mathcal{H}_\omega $，
+    在平方变量代换下，$\mathcal{P} ^\mathcal{H}_\omega $等价于一个$\hat{n}$维球。
+\end{tcolorbox}
+\begin{tcolorbox}[red]
+    \textbf{映射2: 单纯形 $\rightarrow $ 凸多面体}
+    \begin{equation}\label{1}
+        q = v_0 + \mathbf{\hat{V}}\mathbf{\omega}
+    \end{equation}
+    其中，$q\in\mathcal{P}^\mathcal{H}$，$\mathbf{\hat{V}}= (\hat{v_1},\hat{v_2},\cdots, \hat{v_{\widehat{n}}})$，
+    $\hat{v_i}= v_i-v_0$，$\mathbf{\omega}=(\omega_1,\cdots,\omega_{\widehat{n}})^T$。由如下单纯形映射到凸多面体\eqref{polytope}：
+    \begin{equation}\label{simplex}
+        \mathcal{P}_w^\mathcal{H}=\left\{w\in\mathbb{R}^{\hat{n}} \bigg| w\succeq0, \|w\|_1\leq1\right\}.
+    \end{equation}
+\end{tcolorbox}
+\begin{tcolorbox}[red]
+    \textbf{映射3: 球体 $\rightarrow $ 单纯形}
+    \begin{equation}\label{2}
+        \omega =[x]^2
+    \end{equation}
+    其中，$[\cdot ]^2：\mathbb{R}^{\hat{n}}\mapsto \mathbb{R}^{\hat{n}}$表示逐元素平方的操作。由如下球体映射到单纯形\eqref{simplex}：
+    \begin{equation}
+        \mathcal{B}^{\hat{n}}=\left\{x\in\mathbb{R}^{\hat{n}} \Big| \|x\|_2\leq1\right\}.
+    \end{equation}
+\end{tcolorbox}
+
+\begin{tcolorbox}[blue]
+    \textbf{总映射: 欧氏空间$\mathbb{R}^n$ $\rightarrow $ 凸多面体:}
+    对\eqref{sqheretorn}、\eqref{1}、\eqref{2}复合操作，将欧式空间映射到$\mathcal{P}^{\mathcal{H}}$上，定义为
+    \begin{equation}
+        q=v_0+\frac{4\hat{\mathbf{V}}[\xi]^2}{(\xi^\text{T}\xi+1)^2}\in\mathcal{P}^{\mathcal{H}}, \forall \xi\in\mathbb{R}^{\hat{n}}.
+    \end{equation}
+    同样引入一个无约束代理变量$\xi$，使得任意的$\xi\in\mathbb{R}^{\hat{n}}$均有对应的$q\in\mathcal{P}^{\mathcal{H}}$，梯度
+    \begin{equation}
+        \frac{\partial J}{\partial\xi_i}=\frac{8\xi_i\circ\hat{\mathrm{V}}^\mathrm{T}g_i}{(\xi_i^\mathrm{T}\xi_i+1)^2}-\frac{16g_i^\mathrm{T}\hat{\mathrm{V}}[\xi_i]^2}{(\xi_i^\mathrm{T}\xi_i+1)^3}\xi_i.
+    \end{equation}
+    其中，$\circ$为Hadamard乘积。
+\end{tcolorbox}
+\textcolor{red}{\textbf{疑问：映射1、2和3不是一一对应的会对优化产生影响吗？}}
+
+
+\textcolor{red}{\textbf{目前解释：对于任意优化变量$\xi$均有对应的$q\in\mathcal{P}^{\mathcal{H}}$}}
+\subsubsection{时间约束的处理}
+    MINCO轨迹的时间向量$\mathbf{T}\in\mathbb{R}_{>0}^M$是带约束的，
+    为了便于求解将有约束时间变量映射至无约束变量$\mathbf{\tau} $中。
+    对于不严格要求轨迹时间的情况，可采取如下微分同胚变换
+    \begin{equation}
+        \mathbf{T}=e^{[\tau]}
+    \end{equation}
+\subsubsection{连续时间约束优化的惩罚泛函}
+    对于轨迹$p:[0,T]\mapsto\mathbb{R}^m$，定义如下惩罚泛函
+    \begin{equation}
+        I_{\mathcal{G}}^k[p]=\int_0^T\max\left[\mathcal{G}(p(t),\ldots,p^{(s)}(t)),\mathbf{0}\right]^k \mathrm{d}t,
+    \end{equation}
+    其中$k\in\mathbb{R}_{>0}\text{ 并且}\max\left[\cdot,0\right]^k\text{代表逐元素最大操作和逐元素幂函数的复合操作。}$
+    当参数$k=1$时，$I_{\mathcal{G}}^k[p]$是非光滑但精确的，构造如下光滑近似
+    \begin{equation}
+        \psi_\mu(x)=\begin{cases}0&\text{if} x\leq0,\\[2ex](\mu-x/2)\left(x/\mu\right)^3&\text{if} 0<x<\mu,\\[2ex]x-\mu/2&\text{if} x\geq\mu.\end{cases}
+    \end{equation}
+    该光滑近似或$I_{\mathcal{G}}^3[p]$均可用于惩罚泛函。
+
+    
+    定义采样函数$\mathcal{G}_\tau:\mathbb{R}^{2s\times m}\times\mathbb{R}_{>0}\times[0,1]\mapsto\mathbb{R}^{n_g}$如下
+    \begin{equation}
+        \mathcal{G}_\tau(\mathbf{c}_i,T_i,\tau)=\mathcal{G}\left(\mathbf{c}_i^\mathrm{T}\beta(T_i\cdot\tau),\ldots,\mathbf{c}_i^\mathrm{T}\beta^{(s)}(T_i\cdot\tau)\right),
+    \end{equation}
+    其中，$\tau$代表归一化时间。
+    对 $I_\mathcal{G}[p]\text{ 的数值积分 }I:\mathbb{R}^{2Ms\times m}\times\mathbb{R}_{>0}^M\mapsto\mathbb{R}_{>0}$
+    可以通过采样函数的加权和来计算，即
+    \begin{equation}
+        I(\mathbf{c},\mathbf{T})=\sum_{i=1}^M\frac{T_i}{\kappa_i}\sum_{j=0}^{\kappa_i}
+        \bar{\omega}_j\chi^\mathrm{T}\max[\mathcal{G}_\tau(\mathbf{c}_i,T_i,\frac{j}{\kappa_i}),\mathbf{0}]^k.
+    \end{equation}
+    其中$\kappa_i$直接控制该数值积分的精度，$\chi$是惩罚向量的权重，并选取权重$(\bar{\omega}_0,\bar{\omega}_1,\ldots,\bar{\omega}_{\kappa_i-1},\bar{\omega}_{\kappa_i})=(1/2,1,\ldots,1,1/2)$。
+\subsubsection{MINCO轨迹类（详细参考毕设论文）}
+    假设多段轨迹的时间分配为固定常量，现在先只考虑边界条件约束求解\(M\)段轨迹的控制量最小化问题，有如下形式：
+\begin{subequations}\label{equ-3-3-6}
+\begin{align}
+    \min_{z(t)}\ \  &\int_{t_0}^{t_M}v(t)^\mathrm{T}\mathbf{W}v(t)\mathrm{d}t\label{equ-3-3-6a} \\
+    \text{s.t.}\  \  &z^{(s)}(t)=v(t),\forall t\in[t_0,t_M],\label{equ-3-3-6b}  \\
+    &z^{[s-1]}(t_0)=\bar{z}_o,z^{[s-1]}(t_M)=\bar{z}_f,\label{equ-3-3-6c} \\
+    &z^{[d_i-1]}(t_i)=\bar{z}_i,1\leq i<M,\label{equ-3-3-6d} \\
+    &t_{i-1}<t_i,1\leq i\leq M\label{equ-3-3-6e}
+\end{align}
+\end{subequations}
+
+\begin{tcolorbox}[green]
+\textbf{最优性充要条件}：当且仅当轨迹\(z^*(t)\)满足以下全部条件时，\(z^*(t)\)是问题\eqref{equ-3-3-6}的最优解，并且\(z^*(t)\)存在且唯一。
+
+
+（1）对于所有\(1\leq i \leq M \)，轨迹\(z*(t):[t_{i-1},t_i]\mapsto \mathbb{R} ^m\)是一个\(2s-1\)次多项式；
+
+
+（2）轨迹\(z^*(t)\)满足轨迹的起终点约束和中间条件，即满足式\eqref{equ-3-3-6c}和式\eqref{equ-3-3-6d}；
+
+
+（3）对于所有\(1\leq i \leq M \)，轨迹\(z^*(t)\)在中间点\(t_i\)处满足\(\bar{d}_i-1\)阶连续可微，其中\(\bar{d}_i=2s-d_i\)。
+\end{tcolorbox}
+
+
+
+借助该最优性充要条件可以直接构造满足约束的唯一最优轨迹，甚至不需要对代价泛函本身进行任何处理，具体构造方法如下。
+
+
+对于一个\(m\)维多段轨迹，其每一段都是一个\(2s-1\)次多项式，表达式如下
+\begin{equation}\label{equ-3-3-7}
+p_i(t)=\mathbf{c}_i^\mathrm{T}\beta(t-t_{i-1}),t\in[t_{i-1},t_i]
+\end{equation}
+其中，\(\mathbf{c}_i \in \mathbb{R} ^{2s\times m}\)是多项式的系数矩阵，\(\beta(x)=(1,x,\ldots,x^{2s-1})^\mathrm{T}\in \mathbb{R} ^{2s}\)是多项式的基。
+将每一段轨迹中的多项式系数矩阵和时间堆成大矩阵，即
+\begin{equation}\label{equ-3-3-8}
+\mathbf{c}=\left(\mathbf{c}_1^\mathrm{T},\ldots,\mathbf{c}_M^\mathrm{T}\right)^\mathrm{T}\in \mathbb{R} ^{2Ms\times m},\mathbf{T}=\left(T_1,\ldots,T_M\right)^\mathrm{T}\in \mathbb{R} ^M_{>0}
+\end{equation}
+其中，\(T_i\)表示第i段多项式轨迹的时间。
+
+\begin{tcolorbox}[blue]
+对于每一个中间点，给定的\(d_i-1\)阶中间点状态可以产生\(d_i\)个给定值的约束方程，
+并且\(\bar{d}_i-1=2s-d_i-1\)阶连续可微性可以产生\(2s-d_i\)个约束方程。
+因此，每个中间点可以产生\(2s\)个约束方程，具体如下
+\begin{align}
+\begin{pmatrix}
+\mathbf{E}_i \ \ \  \mathbf{F}_i 
+\end{pmatrix}
+\begin{pmatrix}
+    \mathbf{c}_i  \\
+    \mathbf{c}_{i+1} 
+\end{pmatrix}&=
+\begin{pmatrix}
+    \mathbf{D}_i\\
+    \mathbf{0}_{\bar{d}_i\times m}
+\end{pmatrix}\label{equ-3-3-10}\\ 
+\mathbf{E}_i=(\beta(T_i),\ldots,\beta^{(d_i-1)}(T_i),&\beta(T_i),\ldots,\beta^{(\bar{d_i}-1)}(T_i))^\mathrm{T}\in\mathbb{R}^{2s\times2s}\label{equ-3-3-11}\\ 
+\mathbf{F}_i=(\mathbf{0},-\beta(0),\ldots,&-\beta^{(\bar{d}_i-1)}(0))^\mathrm{T}\in\mathbb{R}^{2s\times2s}\label{equ-3-3-12}
+\end{align}
+其中，\(\mathbf{D}_i \in\mathbb{R}^{d_i \times 2s}\)是中间条件\eqref{equ-3-3-6d}给定的中间点导数值。
+
+
+对于边界条件\eqref{equ-3-3-6c}给定的起终点的\(s-1\)阶导数信息，有
+\begin{align}
+\mathbf{F}_{0}& =\left(\beta(0),\ldots,\beta^{(s-1)}(0)\right)^{\mathrm{T}}\in\mathbb{R}^{s\times2s}, \label{equ-3-3-15} \\
+\mathbf{E}_{M}& =\left(\beta\left(T_M\right),\ldots,\beta^{\left(s-1\right)}\left(T_M\right)\right)^{\mathrm{T}}\in\mathbb{R}^{s\times2s}. \label{equ-3-3-16}
+\end{align}
+\end{tcolorbox}
+
+
+
+
+
+
+\begin{tcolorbox}[red]
+综合考虑式\eqref{equ-3-3-10}、\eqref{equ-3-3-15}和\eqref{equ-3-3-16}，可以得到以下线性方程组。
+\begin{equation}\label{equ-3-3-17}
+\mathbf{Mc=b}
+\end{equation}
+其中，\(\mathbf{M}\in\mathbb{R}^{2Ms\times2Ms}\)和\(\mathbf{b}\in\mathbb{R}^{2Ms\times m}\)为
+\begin{equation}
+\mathbf{M}=
+    \begin{pmatrix}\mathbf{F}_{0}&\mathbf{0}&\mathbf{0}&\cdots&\mathbf{0}\\
+    \mathbf{E}_{1}&\mathbf{F}_{1}&\mathbf{0}&\cdots&\mathbf{0}\\\mathbf{0}&\mathbf{E}_{2}&\mathbf{F}_{2}&\cdots&\mathbf{0}\\\vdots&\vdots&\vdots&\ddots&\vdots\\\mathbf{0}&\mathbf{0}&\mathbf{0}&\cdots&\mathbf{F}_{M-1}\\\mathbf{0}&\mathbf{0}&\mathbf{0}&\cdots&\mathbf{E}_{M}\end{pmatrix},
+    \mathbf{b}=
+    \begin{pmatrix}\mathbf{D}_{0}\\\mathbf{D}_{1}\\\mathbf{0}_{{\bar{d}_{1}\times m}}\\\vdots\\\mathbf{D}_{M-1}\\\mathbf{0}_{{\bar{d}_{M-1}\times m}}\\\mathbf{D}_{M}\end{pmatrix}
+\end{equation}
+
+
+最优性充要条件的唯一性使矩阵\(\mathbf{M}\)对于任意时间向量\(\mathbf{T}\in R^M_{>0}\)都是非奇异矩阵。
+\end{tcolorbox}
+\subsubsection{MINCO轨迹类梯度传导}
+    选定中间点的 0 阶导数信息作为中间条件，规定轨迹的航点向量\(\mathbf{q}=(q_1,\ldots,q_{M-1})\)
+    与时间向量\(\mathbf{T}=(T_1,\ldots,T_M)^\mathrm{T}\)。
+    将人为定义的代价函数表示为\(\mathcal{K}(\mathbf{c},\mathbf{T})\)，
+    将轨迹参数化后，代价函数为\(\mathcal{W}(\mathbf{q},\mathbf{T})=\mathcal{K}(\mathbf{c}(\mathbf{q},\mathbf{T}),\mathbf{T})\)。
+    优化代价函数，需要获得代价函数\(\mathcal{W}\)关于时间\(\mathbf{T}\)和空间\(\mathbf{q}\)的梯度，即\(\partial\mathcal{W}/\partial\mathbf{q}\)和
+    \(\partial\mathcal{W}/\partial\mathbf{T}\)，如下：
+    \begin{align}
+        &\frac{\partial\mathcal{W}}{\partial\mathbf{q}}=\begin{pmatrix}\mathbf{G}_1^\mathrm{T}e_1,\ldots,\mathbf{G}_{M-1}^\mathrm{T}e_1\end{pmatrix}\label{equ-3-5-2} \\  
+        &\frac{\partial\mathcal{W}}{\partial T_i}=\frac{\partial\mathcal{K}}{\partial T_i}-\mathrm{Tr}\left\{\mathbf{G}_i^\mathrm{T}\frac{\partial\mathbf{E}_i}{\partial T_i}\mathbf{c}_i\right\}\label{equ-3-5-3}
+    \end{align}
+    其中，通过式\eqref{equ-3-3-11}可以直接解析求解\(\partial\mathbf{E}_i/\partial T_i\)。
+    因此，通过对所有\(1\leq i\leq M\)求解\(\partial\mathbf{E}_i/\partial T_i\)便可以得到
+    \(\partial\mathbf{E}_i/\partial \mathbf{T}\)。
+    \(\mathrm{Tr}(\cdot )\)是矩阵的迹，即对角线元素的乘积。\(e_1\)是单位矩阵\(\mathbf{I_{2s}}\)的第一个列向量。
+    \(\mathbf{G}_i\)是矩阵\(\mathbf{G}=\left(\mathbf{G}_{0}^{{\mathrm{T}}},\mathbf{G}_{1}^{{\mathrm{T}}},\ldots,\mathbf{G}_{M-1}^{{\mathrm{T}}},\mathbf{G}_{M}^{{\mathrm{T}}}\right)^{{\mathrm{T}}}\)
+    的子矩阵，\(\mathbf{G}_0,\mathbf{G}_M\in\mathbb{R}^{s\times m},\mathbf{G}_i\in\mathbb{R}^{2s\times m}\)，\(\mathbf{G}\)由下式求解得到
+    \begin{equation}\label{equ-3-5-4} 
+        \mathbf{M}^\mathrm{T}\mathbf{G}=\frac{\partial\mathcal{K}}{\partial\mathbf{c}}
+    \end{equation}
+
+\subsection{GCOPTER源代码学习}		
+\subsubsection{代码文件目录} 
+\begin{tcolorbox}[green]
+    \textbf{功能包：gcopter 、mockmap（地图生成）}
+\end{tcolorbox}
+\begin{tcolorbox}[red]
+    \textbf{gcopter:}\\
+    \textbf{——————config(参数)}\\
+    —————————global\_planning.rviz  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~(rviz界面参数)\\
+    —————————global\_planning.yaml   ~~~~~~~~~~~~~~~~~~~~~~~~~~~(优化参数)\\
+    \textbf{——————include(头文件)}\\
+    \textbf{—————————————gcopter}\\
+    ———————————————(1)firi.hpp         ~~~~~~~~~~~~~~~~   H形凸多面体生成\\    
+    ———————————————(2)flatness.hpp      ~~~~~~~~ 带风阻模型的微分平坦映射\\
+    ———————————————(3)gcopter.hpp       ~~~~~~~~~~     梯度及代价函数计算 + 优化流程\\
+    ———————————————(4)geo\_utils.hpp    ~~~~~~~~~~     H形凸多面体->V形凸多面体\\
+    ———————————————(5)lbfgs.hpp         ~~~~~~~~~~~~~~~~~~~~~~~~~~~  求解器\\
+    ———————————————(6)minco.hpp      ~~~~~~~~~~~~~~    MINCO轨迹定义及求解   \\
+    ———————————————(7)quickhull.hpp     ~~~~~~~~~~~~~~~~~~ 快速凸包算法\\
+    ———————————————(8)root\_finder.hpp      ~~~~~~~~~~~~~~~~~~~~多项式求根\\
+    ———————————————(9)sdlp.hpp~~~~~~~~~~~~~~~~~~~~~  H形凸多面体生成\\
+    ———————————————(10)sfc\_gen.hpp~~~~~~~~~~~~~~~~~~~  H形凸多面体生成\\
+    ———————————————(11)trajectory.hpp~~~~~~~~~~~~~~~~~~~~  多项式轨迹定义\\
+    ———————————————(12)voxel\_dilater.hpp~~~~~~~~~~~~~~~~~~~~~~~~~~~  体素地图\\
+    ———————————————(13)voxel\_map.hpp~~~~~~~~~~~~~~~~~~~~~~~~~~~  体素地图\\
+    —————————————misc\\
+    ———————————————visualizer.hpp\\
+    \textbf{——————launch(启动文件)}\\
+    —————————global\_planning.launch\\
+    \textbf{——————src(源码)}\\
+    —————————global\_planning.cpp
+\end{tcolorbox}
+
+\subsubsection{trajectory.hpp}
+\begin{tcolorbox}[blue]
+\textbf{模板<D>类: Piece}（定义一段多项式轨迹）\\  
+\textbf{成员:}
+\end{tcolorbox}
+\begin{tcolorbox}[red]
+\textbf{类型定义:}\\
+\begin{tabular}{ccc}
+    \toprule
+    名称 & 类型  & 解释  \\
+    \midrule
+    CoefficientMat    & Eigen::Matrix<double, 3, D + 1> & 系数矩阵 \\
+    VelCoefficientMat  &  Eigen::Matrix<double, 3, D>  & 速度系数矩阵  \\
+    AccCoefficientMat   &  Eigen::Matrix<double, 3, D - 1>   & 加速度系数矩阵  \\
+    \bottomrule
+\end{tabular}
+
+\end{tcolorbox}
+\begin{tcolorbox}[red]
+\textbf{数据成员:}\\
+\begin{tabular}{ccc}
+    \toprule
+    成员 & 类型  & 解释  \\
+    \midrule
+    duration & double & 时间 \\
+    coeffMat  &  CoefficientMat  & 系数矩阵  \\
+    \bottomrule
+\end{tabular}
+\end{tcolorbox}
+\begin{tcolorbox}[red]
+\textbf{成员函数:}\\
+\begin{tabular}{cccc}
+    \toprule
+    成员函数 & 返回类型 & 输入 & 解释  \\
+    \midrule
+    Piece() & —— & 时间、系数 & 构造函数\\
+    getDim() & int & —— & 返回轨迹维度\\
+    getDegree() & int & —— & 返回轨迹多项式阶次\\
+    getDuration() & double & —— & 返回轨迹时间\\
+    getCoeffMat() & CoefficientMat & —— & 返回多项式系数矩阵 \\
+    getPos()  &  Eigen::Vector3d  & 时间t & 返回t时刻轨迹位置  \\
+    getVel() &  Eigen::Vector3d  & 时间t & 返回t时刻轨迹速度  \\
+    getAcc() &  Eigen::Vector3d  & 时间t & 返回t时刻轨迹加速度  \\
+    getJer() &  Eigen::Vector3d  & 时间t & 返回t时刻轨迹加加速度  \\
+    normalizePosCoeffMat() & CoefficientMat & —— & 时间归一化处理系数矩阵\\
+    normalizeVelCoeffMat() & VelCoefficientMat& —— & 时间归一化处理速度矩阵\\
+    normalizeAccCoeffMat()& AccCoefficientMat& —— & 时间归一化处理加速度矩阵\\
+    \textcolor{red}{\textbf{getMaxVelRate()}} & double & —— & 获得轨迹最大速率\\
+    \textcolor{red}{\textbf{getMaxAccRate()}} & double & —— & 获得轨迹最大加速度率\\
+    checkMaxVelRate() & bool & maxVelRate & 速率是否满足限制\\
+    checkMaxAccRate() & bool & maxAccRate & 加速度率是否满足限制\\
+    \bottomrule
+\end{tabular}
+\end{tcolorbox}
+
+\begin{tcolorbox}[blue]
+    \textbf{模板<D>类: Trajectory}（定义多段多项式轨迹）\\  
+    \textbf{成员:}
+    \end{tcolorbox}
+    \begin{tcolorbox}[red]
+    \textbf{类型定义:}\\
+    \begin{tabular}{ccc}
+        \toprule
+        名称 & 类型  & 解释  \\
+        \midrule
+        Pieces    & std::vector<Piece <D> > & 多项式容器 \\
+        \bottomrule
+    \end{tabular}
+\end{tcolorbox}
+
+\begin{tcolorbox}[red]
+    \textbf{数据成员:}\\
+    \begin{tabular}{ccc}
+        \toprule
+        成员 & 类型  & 解释  \\
+        \midrule
+        pieces & Pieces & 多段多项式 \\
+        \bottomrule
+    \end{tabular}
+\end{tcolorbox}
+
+
+\begin{tcolorbox}[red]
+    \textbf{成员函数:}\\
+    \begin{tabular}{cccc}
+        \toprule
+        成员函数 & 返回类型 & 输入 & 解释  \\
+        \midrule
+        Trajectory() & —— & 时间、系数 & 构造函数\\
+        getPieceNum() & int & —— & 返回轨迹个数\\
+        getDurations() & Eigen::VectorXd & —— & 返回每段轨迹时间\\
+        getTotalDuration() & double & —— & 返回轨迹总时间 \\
+        getPositions()  &  Eigen::Matrix3Xd  & —— & 得到航点及始末点位置  \\
+        locatePieceIdx() & int &  t & 定位轨迹段索引\\
+        append()& —— &traj &将一个轨迹添加到当前轨迹\\
+        getJuncPos() & Eigen::Vector3d & index & 获得idx航点位置\\
+        getJuncVel() & Eigen::Vector3d & index & 获得idx航点速度\\
+        getJuncAcc() & Eigen::Vector3d & index & 获得idx航点加速度\\
+        getPos() &  Eigen::Vector3d  & 时间t & 返回t时刻轨迹位置  \\
+        getVel() &  Eigen::Vector3d  & 时间t & 返回t时刻轨迹速度  \\
+        getAcc() &  Eigen::Vector3d  & 时间t & 返回t时刻轨迹加速度  \\
+        getJer() &  Eigen::Vector3d  & 时间t & 返回t时刻轨迹加加速度  \\
+        getMaxVelRate() & double & —— & 获得轨迹最大速率\\
+        getMaxAccRate() & double & —— & 获得轨迹最大加速度率\\
+        checkMaxVelRate() & bool & maxVelRate & 速率是否满足限制\\
+        checkMaxAccRate() & bool & maxAccRate & 加速度率是否满足限制\\
+        \bottomrule
+    \end{tabular}
+\end{tcolorbox}
+\subsubsection{minco.hpp}
+\textbf{命名空间 minco}
+\textbf{BandedSystem类}
+\begin{tcolorbox}[red]
+        \textbf{数据成员:}\\
+        \begin{tabular}{ccc}
+            \toprule
+            成员 & 类型  & 解释  \\
+            \midrule
+            N & int & 带状矩阵大小 \\
+            lowerBw & int & 下带宽 \\
+            upperBw & int & 上带宽 \\
+            \bottomrule
+        \end{tabular}
+\end{tcolorbox}
+    
+\begin{tcolorbox}[red]
+        \textbf{成员函数:}\\
+        \begin{tabular}{cccc}
+            \toprule
+            成员函数 & 返回类型 & 输入 & 解释  \\
+            \midrule
+            solve() & —— & 矩阵b & 求解带状线性方程组Ax=b\\
+            solveAdj() & —— & 矩阵b & 求解带状线性方程组ATx=b\\
+            factorizeLU() & —— & —— & 带状矩阵LU分解\\
+            \bottomrule
+        \end{tabular}
+\end{tcolorbox}
+    \textbf{MINCO\_S2NU类}
+    \textbf{数据成员:}\\
+    \begin{tcolorbox}[red]
+    \begin{tabular}{ccc}
+        \toprule
+        成员 & 类型  & 解释  \\
+        \midrule
+        N & int & 轨迹段的数量 \\
+        headPV & Eigen::Matrix<double, 3, 2> & 轨迹初始位置、速度矩阵 \\
+        tailPV & Eigen::Matrix<double, 3, 2> & 轨迹最终位置、速度矩阵 \\
+        A & BandedSystem & 带状矩阵M \\
+        b & Eigen::MatrixX3d & 存D矩阵 \\
+        T1 & Eigen::VectorXd & 时间向量的一次方 \\
+        T2 & Eigen::VectorXd & 时间向量的二次方 \\
+        T3 & Eigen::VectorXd &时间向量的三次方 \\
+        \bottomrule
+    \end{tabular}
+    \end{tcolorbox}
+    \begin{tcolorbox}[red]
+        \textbf{成员函数:}\\
+        \begin{tabular}{cccc}
+            \toprule
+            成员函数 & 返回类型 & 输入 & 解释  \\
+            \midrule
+            setConditions() & —— & ~~~ & 初始化\\
+            setParameters() & —— & 航点、时间 & 求解系数矩阵c\\
+            getTrajectory() & —— & traj & 存储求得的轨迹\\
+            getEnergy() & —— & energy & 定义轨迹能量\\
+            getEnergyPartialGradByCoeffs() & —— & gdc & 能量关于系数的偏导\\
+            getEnergyPartialGradByTimes() & —— & gdT & 能量关于时间的偏导\\
+            propogateGrad()& —— & ~~ & 代价函数对航点和时间的梯度\\
+            \bottomrule
+        \end{tabular}
+    \end{tcolorbox}
+
+
+    \textbf{MINCO\_S3NU类}\\
+    \textbf{MINCO\_S4NU类}
+\subsubsection{lbfgs.hpp}
+\textbf{命名空间lbfgs}\\
+\textbf{lbfgs\_parameter\_t类: 优化参数}\\
+\begin{tcolorbox}[red]
+    \textbf{函数指针}\\
+    typedef double \\(*lbfgs\_evaluate\_t)(void \*instance, const Eigen::VectorXd \&x, Eigen::VectorXd \&g);\\
+    instance : 自定义指针 ||  x ：优化变量  || g : 代价对x的梯度
+\end{tcolorbox}
+\begin{tcolorbox}[red]
+    \textbf{函数}\\
+    line\_search\_lewisoverton()    线搜索\\
+    inline int lbfgs\_optimize(\\
+        Eigen::VectorXd \&x,\\
+                              double \&f,\\
+                              lbfgs\_evaluate\_t proc\_evaluate,\\
+                              lbfgs\_stepbound\_t proc\_stepbound,\\
+                              lbfgs\_progress\_t proc\_progress,\\
+                              void \*instance,\\
+                              const lbfgs\_parameter\_t \&param)\\
+\end{tcolorbox}
+
+
+\textbf{lbfgs测试}\\
+函数：$ z = (x-1)^2 + y^2$\\
+\begin{lstlisting}
+    #include <iostream>
+    #include <Eigen/Eigen>
+    #include "lbfgs.hpp"
+    
+    using namespace lbfgs;
+    
+    double evaluate_fun(void *instance, 
+                        const Eigen::VectorXd &x, 
+                        Eigen::VectorXd &g)
+    {
+        g(0) = 2 * (x(0) - 1);
+        g(1) = 2 * x(1);
+        return pow(x(0) - 1, 2) + pow(x(1), 2);
+    }  
+    int main()
+    {
+        Eigen::VectorXd x(2);
+        x << 2, 2;
+        double f;
+        lbfgs_parameter_t param;
+        int state = lbfgs_optimize(x, f, evaluate_fun, 
+                                   nullptr, nullptr, nullptr, 
+                                   param);
+        if(state >= 0)
+        {
+            std::cout << "min_f: " << f << std::endl 
+                    << "optimal x :" << x.transpose() << std::endl;
+        }
+        else
+        {
+            std::cout << "error" << std::endl;
+        }
+        return 0;
+    }
+\end{lstlisting}
+运行结果：\\
+min\_f: 6.16298e-32\\
+optimal x :           1 -2.22045e-16\\
+\subsubsection{gcopter.hpp}
+\textbf{该头文件主要实现了 GCOPTER\_PolytopeSFC类，其中包含：}\\
+1、代价函数对多项式系数矩阵和时间向量的梯度传导至航点及时间向量
+
+\begin{tcolorbox}[red]
+    \textbf{部分成员函数:}\\
+    \begin{tabular}{cccc}
+        \toprule
+        成员函数 & 解释  \\
+        \midrule
+        backwardT() & 带约束的T范围T>0->无约束的$\tau$\\
+        forwardT() & $\tau -> T $\\
+        backwardGradT & 得到代价函数对$\tau$的梯度\\
+        \bottomrule
+    \end{tabular}
+\end{tcolorbox}
+
+
+\begin{lstlisting}
+    static inline void forwardP(const Eigen::VectorXd &xi,      
+                                    const Eigen::VectorXi &vIdx,  
+                                    const PolyhedraV &vPolys,       
+                                    Eigen::Matrix3Xd &P)        
+        {
+            const int sizeP = vIdx.size();  
+            P.resize(3, sizeP); //P初始化
+            Eigen::VectorXd q;  
+            for (int i = 0, j = 0, k, l; i < sizeP; i++, j += k)
+            {
+                l = vIdx(i);
+                k = vPolys[l].cols(); 
+                q = xi.segment(j, k).normalized().head(k - 1);
+                P.col(i) = vPolys[l].rightCols(k - 1) * q.cwiseProduct(q) +
+                           vPolys[l].col(0);
+            }
+            return;
+        }
+\end{lstlisting}
+\textcolor{red}{\textbf{问题：多面体映射的函数与论文中不同}}\\
+2、连续性约束的惩罚主要包括：\\
+（1）attachPenaltyFunctional函数：各种连续性惩罚梯度及代价叠加。\\
+（2）smoothedL1：一阶惩罚项的光滑近似。\\
+3、总代价函数及梯度：\\
+（1）costFunctional：主要流程为——逆映射求时间和航点——构造minco轨迹
+——能量代价对时间和系数的偏导——连续性惩罚——MINCO梯度传导——时间代价——梯度传导至tau和xi——范数惩罚。\\
+（2）：normRetrictionLayer：范数惩罚。\\
+4、最小距离路径：\\
+（1）costDistance：代价函数及梯度。\\
+（2）getShortestPath：获得最短路径。\\
+5、获得飞行走廊：processCorridor\\
+6、初始化：setup：最短路径——优化维度设置——多面体索引设置——MINCO轨迹计算——各种对象初始化。\\
+7、优化：optimize\\
+
+
+\begin{tcolorbox}[blue]
+\textbf{GCOPTER代码基本阅读完，除quickhull等飞行走廊生成有关算法、带风阻微分平坦推导等以外，主要代码流程以及MINCO轨迹求解优化已经基本看完。}
+\end{tcolorbox}
+
