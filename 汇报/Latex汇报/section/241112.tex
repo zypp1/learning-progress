@@ -173,21 +173,214 @@ $f(\mathbf{T})$对第$i$段轨迹的时间的导数如下
     \caption{实机钻环实验}\label{snap3}
 \end{figure}
 
-\subsubsection{论文启发}（1）微分平坦
+\subsubsection{论文启发}
+（1）微分平坦
 
 
-掌握无人机微分平坦特性的推导，由平坦输出获得全状态变量和全输入变量的方法。\\
+掌握无人机微分平坦特性的推导，由平坦输出获得全状态变量和全输入变量的方法。
+
+
 （2）优化问题各维度解耦与无量纲优化
 
 
 在该优化问题中优化变量是解耦的，因此优化问题可以被分解为若干个优化子问题。
 并且可以将子优化问题转换为无量纲优化问题，在得到无量纲优化问题的最优解后，
-通过时空放缩即可得到原问题最优解。该方法比直接求解QP问题快速，对于快速响应动态障碍物或目标非常有效\\
+通过时空放缩即可得到原问题最优解。该方法比直接求解QP问题快速，对于快速响应动态障碍物或目标非常有效
+
+
 （3）时间重分配
 
 
-总时间固定的重分配方法。\\
+总时间固定的重分配方法。
+
+
 （4）飞行走廊思想
 
 
 通过约束垂直距离向量的无穷范数，定义一个长方体形飞行走廊，并通过对轨迹采样来满足该飞行走廊约束。
+\subsubsection{Minimum Snap问题的一些思考}
+（1）\textbf{为什么优化时每一段轨迹的时间需要已知？}
+
+
+如果在目标函数$J(\textbf{T})$中，惩罚项只包括$vec,acc,jerk,snap$，那可以通过无限地增加时间来使得代价趋向于0，这种优化问题无意义。
+
+
+（2）\textbf{轨迹多项式的阶次如何确定？}
+
+
+对于最小化轨迹$s$阶导数问题，假设轨迹多项式阶次为$n$，有$m$段轨迹，轨迹维度$j$，参数量$mj(n+1)$，已知约束$(2s+m-1)j$。因此，则需满足
+$n\geq \frac{2s-1}{m}$，因此多项式为$2s-1$阶次。
+\subsection{Polynomial Trajectory Planning for Aggressive Quadrotor Flight in Dense Indoor Environments(ISRR2013)}
+\subsubsection{论文所研究的问题}
+论文在Minimum Snap工作的基础上，将Minimum Snap问题转化为无约束二次规划问题，并给出QP问题的闭式解。另外，对minimum snap和轨迹总时间进行权衡构建代价函数，
+并展示了在该优化问题中时间权重不会影响轨迹形状的现象，根据此现象提出了一种先优化时间比例再对总轨迹时间进行放缩的优化思路。
+\subsubsection{论文算法}
+（1）\textbf{Minimum Snap问题}
+
+
+定义两点之间多项式的惩罚函数为其$\mathbf{P}(t)$导数的平方。
+\begin{equation}
+    J(T)=\int_0^Tc_0P(t)^2+c_1P^{\prime}(t)^2+c_2P^{\prime\prime}(t)^2+\ldots+c_NP^{(N)}(t)^2dt=\mathbf{p}^TQ(T)\mathbf{p}
+\end{equation}
+其中，$\mathbf{p}$是多项式的系数向量。在本问题中，必须固定时间$T$去优化。因此，$M$个多项式段的代价为
+\begin{equation}\label{fun1}
+    J_{\text{total}} = 
+    \begin{bmatrix}
+    \mathbf{p}_1 \\
+    \vdots \\
+    \mathbf{p}_M
+    \end{bmatrix}^T
+    \begin{bmatrix}
+    Q_1(T_1) \\
+    & \ddots \\
+    && Q_M(T_M)
+    \end{bmatrix}
+    \begin{bmatrix}
+    \mathbf{p}_1 \\
+    \vdots \\
+    \mathbf{p}_M
+    \end{bmatrix}^T    
+\end{equation}
+
+
+（2）\textbf{连续性约束}
+
+
+对于一段多项式，可以采用式\ref{constraint1}来对多项式端点的导数进行约束。
+\begin{equation}\label{constraint1}
+    A_i\mathbf{p}_i=\mathbf{d}_i,\quad A_i=\begin{bmatrix}A_0\\A_T\end{bmatrix}_i,\quad\mathbf{d}_i=\begin{bmatrix}d_0\\d_T\end{bmatrix}_i
+\end{equation}
+对于相邻两段多项式，要满足第$i$段多项式的末端的导数和第$i+1$段多项式的末端的导数相等。
+\begin{equation}
+    A_{T,i}\mathbf{p}_i=A_{0,i+1}\mathbf{p}_{i+1}
+\end{equation}
+这些约束可以写成一组线性等式约束。
+\begin{equation}\label{constraint2}
+    A_{total}\begin{bmatrix}\mathbf{p}_1\\\vdots\\\mathbf{p}_M\end{bmatrix}=\begin{bmatrix}\mathbf{d}_1\\\vdots\\\mathbf{d}_M\end{bmatrix}
+\end{equation}
+
+（3）\textbf{无约束QP问题}
+
+
+将连续性约束\ref{constraint2}带入目标函数\ref{fun1}，如下
+\begin{equation}
+    J=\begin{bmatrix}\mathbf{d}_1\\\vdots\\\mathbf{d}_M\end{bmatrix}^T\begin{bmatrix}A_1\\&\ddots\\&&A_M\end{bmatrix}^{-T}\begin{bmatrix}Q_1\\&\ddots\\&&Q_M\end{bmatrix}\begin{bmatrix}A_1\\&\ddots\\&&A_M\end{bmatrix}^{-1}\begin{bmatrix}\mathbf{d}_1\\\vdots\\\mathbf{d}_M\end{bmatrix}
+\end{equation}
+其中，决策变量转化为多项式端点的导数。
+对这些变量进行重新排序，将固定导数的变量$\mathbf{d_F}$分组在一起，自由导数的变量$\mathbf{d_F}$分组在一起，
+这个变换由只有1和0组成的置换矩阵$\mathbf{C}$来完成。
+如下
+\begin{equation}
+    J=\begin{bmatrix}\mathbf{d}_F\\\mathbf{d}_P\end{bmatrix}^T\underbrace{CA^{-T}QA^{-1}C^T}_R\begin{bmatrix}\mathbf{d}_F\\\mathbf{d}_P\end{bmatrix}=\begin{bmatrix}\mathbf{d}_F\\\mathbf{d}_P\end{bmatrix}^T\begin{bmatrix}R_{FF} R_{FP}\\R_{PF} R_{PP}\end{bmatrix}\begin{bmatrix}\mathbf{d}_F\\\mathbf{d}_P\end{bmatrix}
+\end{equation}
+\begin{equation}\label{qp1}
+    J=\mathbf{d}_F^TR_{FF}\mathbf{d}_F+\mathbf{d}_F^TR_{FP}\mathbf{d}_P+\mathbf{d}_P^TR_{PF}\mathbf{d}_F+\mathbf{d}_P^TR_{PP}\mathbf{d}_P
+\end{equation}
+对$J$求微分并使其等于0，得到二次规划问题\ref{qp1}的闭式解
+\begin{equation}
+    \mathbf{d}_P^*=-R_{PP}^{-1}R_{FP}^T\mathbf{d}_F
+\end{equation}
+
+
+（4）\textbf{时间分配}
+
+
+权衡Minimum Snap和总轨迹时间，构建如下代价函数
+\begin{equation}\label{fun2}
+    J_{\text{total}} = 
+    \begin{bmatrix}
+    \mathbf{p}_1 \\
+    \vdots \\
+    \mathbf{p}_M
+    \end{bmatrix}^T
+    \begin{bmatrix}
+    Q_1(T_1) \\
+    & \ddots \\
+    && Q_M(T_M)
+    \end{bmatrix}
+    \begin{bmatrix}
+    \mathbf{p}_1 \\
+    \vdots \\
+    \mathbf{p}_M
+    \end{bmatrix}^T +k_T\sum_{i=1}^MT_i   
+\end{equation}
+
+
+采用梯度下降迭代求解，过程如下图所示
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=8cm, height=4cm]{image/poly1.jpg}
+    \caption{迭代过程，初始总时间为10.5s（红色），最优总时间为7s（蓝色）}\label{poly1}
+\end{figure}
+
+
+采用不同时间权重$k_T$进行优化，结果如下图所示
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=8cm, height=4cm]{image/poly2.jpg}
+    \caption{时间权重对比实验，$k_T$分别设置为 500（上）和 50000（下）}\label{poly2}
+\end{figure}
+
+
+最优轨迹时间分别为9.1s和5.1s，红色矢量为航路点速度、绿色为加速度。
+论文提出无论$k_T$的值如何，最佳轨迹的几何形状都保持不变，最优轨迹段的时间比率与$k_T$无关。
+
+
+（5）\textbf{轨迹避障}
+
+
+论文采用的轨迹避障方法如下：
+当优化后的轨迹与障碍物发生碰撞时，只需要在发生碰撞的轨迹段的两端之间插入一个额外的航路点，将该段路径分成两部分。
+该航路点位于搜索算法给出的最佳分段路径上，因此是无碰撞的。插入新的航路点后重新优化多项式轨迹。并在碰撞时重复该过程。
+
+
+（6）\textbf{执行器约束}
+
+
+可行性的关键因素是确保轨迹在飞行过程中始终满足四旋翼飞行器的输入约束，基于四旋翼无人机的微分平坦特性，
+可以将输入、动力学约束映射到平坦输出空间。
+
+由于平坦输出空间中可行集的非凸性，可能并不能收敛到全局最优。因此，论文提出一种优化策略：
+\begin{itemize}
+    \item 首先忽略执行器约束，通过梯度下降优化分段时间比率。
+    \item 利用最佳时间比率相对于总时间不变的现象，在达到最佳时间比率后，保留最佳比率对总轨迹时间进行优化。
+\end{itemize}
+
+\subsubsection{论文实验}
+（1）\textbf{优化问题的解的质量}
+
+
+    通过与采样方法（多项式RRT* ）进行对比。
+    \begin{figure}[htbp]
+        \centering
+        \includegraphics[width=12cm, height=5.5cm]{image/poly3.jpg}
+        \includegraphics[width=12cm, height=1.5cm]{image/poly.jpg}
+        \caption{多项式RRT*（左）、直线RRT*取航点进行优化（中）、优化（右）}\label{poly3}
+    \end{figure}
+
+
+（2）\textbf{优化性能}
+
+
+    对比不同求解方法所用时间以及成功率，证明无约束优化算法的效率以及数值稳定性。
+    \begin{figure}[htbp]
+        \centering
+        \includegraphics[width=8cm, height=3cm]{image/poly4.jpg}
+        \includegraphics[width=8cm, height=3cm]{image/poly5.jpg}
+        \caption{求解方法对比}\label{poly4}
+    \end{figure}
+
+
+（3）\textbf{实机实验}
+
+\subsubsection{论文启发}
+（1）Minimum Snap问题的闭式解。
+
+
+（2）本文构建优化问题中，时间权重不影响最优轨迹形状。
+
+
+（3）增加无碰撞的航路点来满足轨迹无碰撞。
+
+
+（4）先优化时间比率，再考虑输入约束、动力学约束优化总轨迹时间的优化策略。
